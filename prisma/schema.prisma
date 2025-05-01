@@ -22,6 +22,7 @@ model User {
   password         String
   photo            String?
   year             Int?
+  Region           Region?     @relation(fields: [regionId], references: [id])
   role             UserRole    @default(USER)
   sentMessage      Chat[]      @relation("FromUser")
   receivedMessages Chat[]      @relation("ToUser")
@@ -30,6 +31,10 @@ model User {
   Comment          Comment[]
   LikedPrd         LikedPrd[]
   ViewedPrd        ViewedPrd[]
+  regionId         String
+  Product          Product[]
+  Order            Order[]
+  createdAt        DateTime    @default(now())
 }
 
 enum UserRole {
@@ -41,6 +46,8 @@ enum UserRole {
 model Region {
   id   String @id @default(uuid())
   name String @unique
+  User User[]
+  createdAt        DateTime    @default(now())
 }
 
 model Chat {
@@ -77,19 +84,23 @@ model Product {
   id          String      @id @default(uuid())
   name        String
   price       Float
-  discount    Int
+  skidka      Int?
   status      StatusEnum  @default(NEW)
   description String
   photo       String?
   count       Int
   colors      String[]
   type        ProductType
+  User        User        @relation(fields: [userId], references: [id])
 
   Category   Category?   @relation(fields: [categoryId], references: [id])
   categoryId String?
   Comment    Comment[]
   LikedPrd   LikedPrd[]
   ViewedPrd  ViewedPrd[]
+  userId     String
+  Order      Order[]
+  createdAt        DateTime    @default(now())
 }
 
 enum StatusEnum {
@@ -104,20 +115,22 @@ enum ProductType {
 
 model Category {
   id      String    @id @default(uuid())
-  name    String
+  name    String    @unique
   Product Product[]
+  createdAt        DateTime    @default(now())
 }
 
 model Comment {
   id   String @id @default(uuid())
   text String
-  star Int
+  star Int    @default(0)
 
   User   User   @relation(fields: [userId], references: [id])
   userId String
 
   Product   Product @relation(fields: [productId], references: [id])
   productId String
+  createdAt        DateTime    @default(now())
 }
 
 model LikedPrd {
@@ -129,6 +142,7 @@ model LikedPrd {
   productId String
 
   count Int @default(0)
+  createdAt        DateTime    @default(now())
 }
 
 model ViewedPrd {
@@ -139,4 +153,19 @@ model ViewedPrd {
   productId String
 
   count Int @default(0)
+  createdAt        DateTime    @default(now())
+}
+
+model Order {
+  id String @id @default(uuid())
+
+  User   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  Product   Product @relation(fields: [productId], references: [id])
+  productId String
+
+  color String
+  count Int
+  createdAt        DateTime    @default(now())
 }

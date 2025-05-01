@@ -152,3 +152,13 @@ ALTER TABLE "ViewedPrd" ADD CONSTRAINT "ViewedPrd_userId_fkey" FOREIGN KEY ("use
 
 -- AddForeignKey
 ALTER TABLE "ViewedPrd" ADD CONSTRAINT "ViewedPrd_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+
+INSERT INTO "Region" (id, name) VALUES
+('db16c541-8e1f-4d5c-8327-121f9d2f9e1a', 'ANDIJON'),
+('71d0388e-64cf-42f0-a238-8c52a6aa65c2', 'FARGONA'),
+('2b3a90d7-9b1d-45a1-88f5-0c7c2d77f42b', 'NAMANGAN'),
+('59c385c2-2af0-41a3-8890-474c297c143b', 'TOSHKENT'),
+('b01dd451-2537-4a5e-8574-45e3d89e5a90', 'BUXORO'),
+('e69a01a3-9ac6-43d4-a3fc-7f3424d8b7a2', 'SAMARQAND'),
+('a8f5b01c-b789-4a65-9a4f-49d7e5e021ef', 'XORAZM');
