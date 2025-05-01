@@ -1,0 +1,142 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String      @id @default(uuid())
+  firstName        String
+  lastName         String
+  phone            String      @unique
+  email            String      @unique
+  password         String
+  photo            String?
+  year             Int?
+  role             UserRole    @default(USER)
+  sentMessage      Chat[]      @relation("FromUser")
+  receivedMessages Chat[]      @relation("ToUser")
+  FromMessage      Message[]   @relation("FromUser")
+  ToMessage        Message[]   @relation("ToUser")
+  Comment          Comment[]
+  LikedPrd         LikedPrd[]
+  ViewedPrd        ViewedPrd[]
+}
+
+enum UserRole {
+  ADMIN
+  SUPERADMIN
+  USER
+}
+
+model Region {
+  id   String @id @default(uuid())
+  name String @unique
+}
+
+model Chat {
+  id String @id @default(uuid())
+
+  from   User   @relation("FromUser", fields: [fromId], references: [id])
+  fromId String
+
+  to   User   @relation("ToUser", fields: [toId], references: [id])
+  toId String
+
+  Message   Message[]
+  createdAt DateTime  @default(now())
+}
+
+model Message {
+  id String @id @default(uuid())
+
+  text String
+
+  from   User   @relation("FromUser", fields: [fromId], references: [id])
+  fromId String
+
+  to   User   @relation("ToUser", fields: [toId], references: [id])
+  toId String
+
+  chat   Chat   @relation(fields: [chatId], references: [id])
+  chatId String
+
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id          String      @id @default(uuid())
+  name        String
+  price       Float
+  discount    Int
+  status      StatusEnum  @default(NEW)
+  description String
+  photo       String?
+  count       Int
+  colors      String[]
+  type        ProductType
+
+  Category   Category?   @relation(fields: [categoryId], references: [id])
+  categoryId String?
+  Comment    Comment[]
+  LikedPrd   LikedPrd[]
+  ViewedPrd  ViewedPrd[]
+}
+
+enum StatusEnum {
+  NEW
+  OLD
+}
+
+enum ProductType {
+  TV
+  SMARTPHONE
+}
+
+model Category {
+  id      String    @id @default(uuid())
+  name    String
+  Product Product[]
+}
+
+model Comment {
+  id   String @id @default(uuid())
+  text String
+  star Int
+
+  User   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  Product   Product @relation(fields: [productId], references: [id])
+  productId String
+}
+
+model LikedPrd {
+  id String @id @default(uuid())
+
+  User      User    @relation(fields: [userId], references: [id])
+  Product   Product @relation(fields: [productId], references: [id])
+  userId    String
+  productId String
+
+  count Int @default(0)
+}
+
+model ViewedPrd {
+  id        String  @id @default(uuid())
+  User      User    @relation(fields: [userId], references: [id])
+  Product   Product @relation(fields: [productId], references: [id])
+  userId    String
+  productId String
+
+  count Int @default(0)
+}
