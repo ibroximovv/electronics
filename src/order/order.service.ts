@@ -3,6 +3,8 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { Request } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
+import { GetOrderDto } from './dto/get-order.dto';
 
 @Injectable()
 export class OrderService {
@@ -37,18 +39,81 @@ export class OrderService {
     }
   }
 
-  async findAll() {
+  async findAll(query: GetOrderDto) {
     try {
-      return await this.prisma.order.findMany();
+      const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc', productId } = query;
+  
+      const skip = (page - 1) * limit;
+  
+      const where: Prisma.OrderWhereInput = {
+        ...(productId && { productId: { equals: productId } }),
+      };
+  
+      const orderBy = {
+        [sortBy]: sortOrder,
+      };
+  
+      const [orders, total] = await Promise.all([
+        this.prisma.order.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limit,
+          include: {
+            User: {
+              select: {
+                id: true,
+                firstName: true,
+                phone: true
+              }
+            },
+            Product: {
+              select: {
+                id: true,
+                name: true,
+                price: true
+              }
+            }
+          },
+          omit: { productId: true, userId: true }
+        }),
+        this.prisma.order.count({ where }),
+      ]);
+  
+      return {
+        data: orders,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
       console.log(error.message);
-      throw new InternalServerErrorException(error.message || 'Internal server Error')
+      throw new InternalServerErrorException(error.message || 'Internal Server Error');
     }
   }
 
   async findOne(id: string) {
     try {
-      const findOne = await this.prisma.order.findFirst({ where: { id }})
+      const findOne = await this.prisma.order.findFirst({ where: { id },
+        include: {
+          User: {
+            select: {
+              id: true,
+              firstName: true,
+              phone: true
+            }
+          },
+          Product: {
+            select: {
+              id: true,
+              name: true,
+              price: true
+            }
+          }
+        },
+        omit: { productId: true, userId: true }
+      })
       if (!findOne) {
         throw new BadRequestException('Order not found')
       }
@@ -85,7 +150,25 @@ export class OrderService {
           throw new BadRequestException('This product is not available in this color.')
         }
       }
-      return await this.prisma.order.update({ where: { id }, data: updateOrderDto});
+      return await this.prisma.order.update({ where: { id }, data: updateOrderDto, 
+        include: {
+          User: {
+            select: {
+              id: true,
+              firstName: true,
+              phone: true
+            }
+          },
+          Product: {
+            select: {
+              id: true,
+              name: true,
+              price: true
+            }
+          }
+        },
+        omit: { productId: true, userId: true }
+      });
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error; 
@@ -101,7 +184,25 @@ export class OrderService {
       if (!findOne) {
         throw new BadRequestException('Order not found')
       }
-      const deletedOrder = await this.prisma.order.delete({ where: { id }})
+      const deletedOrder = await this.prisma.order.delete({ where: { id },
+        include: {
+          User: {
+            select: {
+              id: true,
+              firstName: true,
+              phone: true
+            }
+          },
+          Product: {
+            select: {
+              id: true,
+              name: true,
+              price: true
+            }
+          }
+        },
+        omit: { productId: true, userId: true }
+      })
       const findPrd = await this.prisma.product.findFirst({ where: { id: findOne.productId }})
       if(!findPrd) {
         throw new BadRequestException('Product not found')

@@ -3,6 +3,7 @@ import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
 import { Request } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { GetChatDto } from './dto/get-chat.dto';
 
 @Injectable()
 export class ChatService {
@@ -29,18 +30,79 @@ export class ChatService {
     }
   }
 
-  async findAll() {
+  async findAll(query: GetChatDto) {
     try {
-      return await this.prisma.chat.findMany();
+      const { page = 1, limit = 10 } = query;
+  
+      const skip = (page - 1) * limit;
+  
+      const [chats, total] = await Promise.all([
+        this.prisma.chat.findMany({
+          skip,
+          take: limit,
+          include: {
+            from: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                phone: true,
+                photo: true
+              }
+            },
+            to: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                phone: true,
+                photo: true,
+              }
+            }
+          },
+          omit: { toId: true, fromId: true }
+        }),
+        this.prisma.chat.count(),
+      ]);
+  
+      return {
+        data: chats,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
       console.log(error.message);
-      throw new InternalServerErrorException(error.message || 'Internal server Error')
+      throw new InternalServerErrorException(error.message || 'Internal Server Error');
     }
   }
 
   async findOne(id: string) {
     try {
-      const findOne = await this.prisma.chat.findFirst({ where: { id }})
+      const findOne = await this.prisma.chat.findFirst({ where: { id },
+        include: {
+          from: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              photo: true
+            }
+          },
+          to: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              photo: true,
+            }
+          }
+        },
+        omit: { toId: true, fromId: true }
+      })
       if (!findOne) {
         throw new BadRequestException('Chat not found')
       }
@@ -60,7 +122,29 @@ export class ChatService {
       if (!findOne) {
         throw new BadRequestException('Chat not found')
       }
-      return await this.prisma.chat.update({ where: { id }, data: updateChatDto });
+      return await this.prisma.chat.update({ where: { id }, data: updateChatDto, 
+        include: {
+          from: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              photo: true
+            }
+          },
+          to: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              photo: true,
+            }
+          }
+        },
+        omit: { toId: true, fromId: true }
+      });
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error; 
@@ -72,7 +156,29 @@ export class ChatService {
 
   async remove(id: string) {
     try {
-      const findOne = await this.prisma.chat.findFirst({ where: { id }})
+      const findOne = await this.prisma.chat.findFirst({ where: { id }, 
+        include: {
+          from: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              photo: true
+            }
+          },
+          to: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              photo: true,
+            }
+          }
+        },
+        omit: { toId: true, fromId: true }
+      })
       if (!findOne) {
         throw new BadRequestException('Chat not found')
       }

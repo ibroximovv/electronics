@@ -3,6 +3,9 @@ import { CreateRegionDto } from './dto/create-region.dto';
 import { UpdateRegionDto } from './dto/update-region.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { GetRegionDto } from './dto/get-region.dto';
+import { contains } from 'class-validator';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class RegionService {
@@ -19,12 +22,42 @@ export class RegionService {
     }
   }
 
-  async findAll() {
+  async findAll(query: GetRegionDto) {
     try {
-      return await this.prisma.region.findMany();
+      const { page = 1, limit = 10, search, sortBy = 'createdAt', sortOrder = 'asc' } = query;
+      const skip = (page - 1) * limit;
+  
+      const where: Prisma.RegionWhereInput = search ? {
+        name: {
+          contains: search,
+          mode: Prisma.QueryMode.insensitive,
+        }
+      } : {};
+  
+      const orderBy = {
+        [sortBy]: sortOrder
+      };
+  
+      const [regions, total] = await Promise.all([
+        this.prisma.region.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limit,
+        }),
+        this.prisma.region.count({ where }),
+      ]);
+  
+      return {
+        data: regions,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
       console.log(error);
-      throw new InternalServerErrorException(error.message || 'Internal server error')
+      throw new InternalServerErrorException(error.message || 'Internal server error');
     }
   }
 

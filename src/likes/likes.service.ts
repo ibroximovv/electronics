@@ -3,6 +3,7 @@ import { CreateLikeDto } from './dto/create-like.dto';
 import { UpdateLikeDto } from './dto/update-like.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Request } from 'express';
+import { GetLikedPrdDto } from './dto/get-like.dto';
 
 @Injectable()
 export class LikesService {
@@ -24,18 +25,59 @@ export class LikesService {
     }
   }
 
-  async findAll() {
+  async findAll(query: GetLikedPrdDto) {
     try {
-      return await this.prisma.likedPrd.findMany();
+      const { page = 1, limit = 10 } = query;
+  
+      const skip = (page - 1) * limit;
+  
+      const [likedProducts, total] = await Promise.all([
+        this.prisma.likedPrd.findMany({
+          skip,
+          take: limit,
+          include: {
+            Product: true,
+            User: {
+              select: {
+                id: true,
+                firstName: true,
+                phone: true
+              }
+            }
+          },
+          omit: {productId: true, userId: true}
+        }),
+        this.prisma.likedPrd.count(),
+      ]);
+  
+      return {
+        data: likedProducts,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
       console.log(error.message);
-      throw new InternalServerErrorException(error.message || 'Internal server Error')
+      throw new InternalServerErrorException(error.message || 'Internal Server Error');
     }
   }
 
   async findOne(id: string) {
     try {
-      const findOne = await this.prisma.likedPrd.findFirst({ where: { id }})
+      const findOne = await this.prisma.likedPrd.findFirst({ where: { id }, 
+        include: {
+          Product: true,
+          User: {
+            select: {
+              id: true,
+              firstName: true,
+              phone: true
+            }
+          }
+        },
+        omit: {productId: true, userId: true}
+      })
       if (!findOne) {
         throw new BadRequestException('LikedPrd not found')
       }
@@ -48,7 +90,19 @@ export class LikesService {
 
   async update(id: string, updateLikeDto: UpdateLikeDto) {
     try {
-      const findOne = await this.prisma.likedPrd.findFirst({ where: { id }})
+      const findOne = await this.prisma.likedPrd.findFirst({ where: { id },
+        include: {
+          Product: true,
+          User: {
+            select: {
+              id: true,
+              firstName: true,
+              phone: true
+            }
+          }
+        },
+        omit: {productId: true, userId: true}
+      })
       if (!findOne) {
         throw new BadRequestException('LikedPrd not found')
       }
@@ -65,7 +119,19 @@ export class LikesService {
       if (!findOne) {
         throw new BadRequestException('LikedPrd not found')
       }
-      return await this.prisma.likedPrd.delete({ where: { id }});
+      return await this.prisma.likedPrd.delete({ where: { id }, 
+        include: {
+          Product: true,
+          User: {
+            select: {
+              id: true,
+              firstName: true,
+              phone: true,
+            }
+          }
+        },
+        omit: {productId: true, userId: true}
+      });
     } catch (error) {
       console.log(error.message);
       throw new InternalServerErrorException(error.message || 'Internal server Error')

@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { UserRole } from "@prisma/client";
 import { Type } from "class-transformer";
-import { IsEmail, IsEnum, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsEmail, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from "class-validator";
 
 export class CreateAdminDto {
     @ApiProperty({ example: 'Ilyosbek' })
@@ -14,6 +14,8 @@ export class CreateAdminDto {
 
     @ApiProperty({ example: 2005, required: false })
     @IsOptional()
+    @Min(1900)
+    @Max(new Date().getFullYear() - 10)
     @Type(() => Number)
     @IsNumber()
     year?: number

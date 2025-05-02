@@ -3,6 +3,7 @@ import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Request } from 'express';
+import { GetMessageDto } from './dto/get-messag.dto';
 
 @Injectable()
 export class MessageService {
@@ -25,12 +26,72 @@ export class MessageService {
     }
   }
 
-  async findAll() {
+  async findAll(query: GetMessageDto) {
     try {
-      return await this.prisma.message.findMany();
+      const { page = 1, limit = 10 } = query;
+  
+      const skip = (page - 1) * limit;
+  
+      const [messages, total] = await Promise.all([
+        this.prisma.message.findMany({
+          skip,
+          take: limit,
+          include: {
+            from: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                Region: true,
+                phone: true,
+                photo: true
+              }
+            },
+            to: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                Region: true,
+                phone: true,
+                photo: true
+              }
+            },
+            chat: {
+              select: {
+                id: true,
+                from: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    phone: true
+                  }
+                },
+                to: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    phone: true
+                  }
+                }
+              }
+            }
+          },
+          omit: { chatId: true, fromId: true, toId: true }
+        }),
+        this.prisma.message.count(),
+      ]);
+  
+      return {
+        data: messages,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
       console.log(error.message);
-      throw new InternalServerErrorException(error.message || 'Internal server Error')
+      throw new InternalServerErrorException(error.message || 'Internal Server Error');
     }
   }
 

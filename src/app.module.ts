@@ -14,10 +14,14 @@ import { LikesModule } from './likes/likes.module';
 import { ChatModule } from './chat/chat.module';
 import { AdminModule } from './admin/admin.module';
 import { MessageModule } from './message/message.module';
+import { MulterController } from './multer/multer.controller';
+import { LastViewedModule } from './last-viewed/last-viewed.module';
+import { MeModule } from './me/me.module';
+import { SessionModule } from './session/session.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, MailModule, RegionModule, CategoryModule, ProductModule, CommentModule, OrderModule, LikesModule, ChatModule, AdminModule, MessageModule],
-  controllers: [AppController],
+  imports: [PrismaModule, AuthModule, MailModule, RegionModule, CategoryModule, ProductModule, CommentModule, OrderModule, LikesModule, ChatModule, AdminModule, MessageModule, LastViewedModule, MeModule, SessionModule],
+  controllers: [AppController, MulterController],
   providers: [AppService, SmsService],
 })
 export class AppModule {}

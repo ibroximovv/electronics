@@ -3,6 +3,8 @@ import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from "bcrypt";
+import { Prisma } from '@prisma/client';
+import { GetUserDto } from './dto/get-user.dto';
 
 @Injectable()
 export class AdminService {
@@ -37,18 +39,72 @@ export class AdminService {
     }
   }
 
-  async findAll() {
+  async findAll(query: GetUserDto) {
     try {
-      return await this.prisma.user.findMany();
+      const { page = 1, limit = 10, year, sortBy = 'createdAt', sortOrder = 'desc', search } = query;
+  
+      const skip = (page - 1) * limit;
+  
+      const where: Prisma.UserWhereInput = {
+        AND: [
+          year
+            ? {
+                year: {
+                  equals: year,
+                },
+              }
+            : {},
+          search
+            ? {
+                OR: [
+                  { firstName: { contains: search, mode: Prisma.QueryMode.insensitive } },
+                  { lastName: { contains: search, mode: Prisma.QueryMode.insensitive } },
+                  { phone: { contains: search, mode: Prisma.QueryMode.insensitive } },
+                ],
+              }
+            : {},
+        ],
+      };
+  
+      const orderBy = {
+        [sortBy]: sortOrder,
+      };
+  
+      const [users, total] = await Promise.all([
+        this.prisma.user.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limit,
+          include: {
+            Region: true
+          },
+          omit: {regionId: true}
+        }),
+        this.prisma.user.count({ where }),
+      ]);
+  
+      return {
+        data: users,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
       console.log(error.message);
-      throw new InternalServerErrorException(error.message || 'Internal server error')
+      throw new InternalServerErrorException(error.message || 'Internal Server Error');
     }
   }
 
   async findOne(id: string) {
     try {
-      const findOne = await this.prisma.user.findFirst({ where: { id }})
+      const findOne = await this.prisma.user.findFirst({ where: { id }, 
+        include: {
+          Region: true
+        },
+        omit: {regionId: true}
+      })
       if (!findOne) {
         throw new BadRequestException('User not found')
       }
@@ -71,7 +127,12 @@ export class AdminService {
       if (updateUserDto.password) {
         updateUserDto.password = bcrypt.hashSync(updateUserDto.password, 10)
       }
-      return await this.prisma.user.update({ where: { id }, data: updateUserDto});
+      return await this.prisma.user.update({ where: { id }, data: updateUserDto, 
+        include: {
+          Region: true
+        },
+        omit: {regionId: true}
+      });
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error; 
@@ -87,7 +148,12 @@ export class AdminService {
       if (!findOne) {
         throw new BadRequestException('User not found')
       }
-      return await this.prisma.user.delete({ where: { id }});
+      return await this.prisma.user.delete({ where: { id }, 
+        include: {
+          Region: true
+        },
+        omit: {regionId: true}
+      });
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error; 

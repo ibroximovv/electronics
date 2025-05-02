@@ -3,6 +3,8 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Request } from 'express';
+import { GetCommentDto } from './dto/get-comment.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class CommentService {
@@ -20,18 +22,81 @@ export class CommentService {
     }
   }
 
-  async findAll() {
+  async findAll(query: GetCommentDto) {
     try {
-      return await this.prisma.comment.findMany();
+      const { page = 1, limit = 10, productId, sortBy = 'createdAt', sortOrder = 'desc' } = query;
+  
+      const skip = (page - 1) * limit;
+  
+      const where: Prisma.CommentWhereInput = {
+        ...(productId && { productId: { equals: productId } }),
+      };
+  
+      const orderBy = {
+        [sortBy]: sortOrder,
+      };
+  
+      const [comments, total] = await Promise.all([
+        this.prisma.comment.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limit,
+          include: {
+            User: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            },
+            Product: {
+              select: {
+                id: true,
+                name: true,
+                price: true
+              }
+            }
+          },
+          omit: { userId: true, productId: true } 
+        }),
+        this.prisma.comment.count({ where }),
+      ]);
+  
+      return {
+        data: comments,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
       console.log(error.message);
-      throw new InternalServerErrorException(error.message || 'Internal server Error')
+      throw new InternalServerErrorException(error.message || 'Internal Server Error');
     }
   }
 
   async findOne(id: string) {
     try {
-      const findOne = await this.prisma.comment.findFirst({ where: { id }})
+      const findOne = await this.prisma.comment.findFirst({ where: { id }, 
+        include: {
+          User: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true
+            }
+          },
+          Product: {
+            select: {
+              id: true,
+              name: true,
+              price: true
+            }
+          }
+        },
+        omit: { userId: true, productId: true } 
+      })
       if (!findOne) {
         throw new BadRequestException('Comment not found')
       }
@@ -48,7 +113,25 @@ export class CommentService {
       if (!findOne) {
         throw new BadRequestException('Comment not found')
       }
-      return await this.prisma.comment.update({ where: { id }, data: updateCommentDto });
+      return await this.prisma.comment.update({ where: { id }, data: updateCommentDto,
+        include: {
+          User: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true
+            }
+          },
+          Product: {
+            select: {
+              id: true,
+              name: true,
+              price: true
+            }
+          }
+        },
+        omit: { userId: true, productId: true } 
+      });
     } catch (error) {
       console.log(error.message);
       throw new InternalServerErrorException(error.message || 'Internal server Error')
@@ -61,7 +144,25 @@ export class CommentService {
       if (!findOne) {
         throw new BadRequestException('Comment not found')
       }
-      return await this.prisma.comment.delete({ where: { id }});
+      return await this.prisma.comment.delete({ where: { id }, 
+        include: {
+          User: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true
+            }
+          },
+          Product: {
+            select: {
+              id: true,
+              name: true,
+              price: true
+            }
+          }
+        },
+        omit: { userId: true, productId: true } 
+      });
     } catch (error) {
       console.log(error.message);
       throw new InternalServerErrorException(error.message || 'Internal server Error')

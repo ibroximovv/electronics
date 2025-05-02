@@ -3,6 +3,8 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
+import { GetCategoryDto } from './dto/get-category.dto';
 
 @Injectable()
 export class CategoryService {
@@ -19,9 +21,39 @@ export class CategoryService {
     }
   }
 
-  async findAll() {
+  async findAll(query: GetCategoryDto) {
     try {
-      return await this.prisma.category.findMany();
+      const { page = 1, limit = 10, search, sortBy = 'createdAt', sortOrder = 'asc' } = query;
+      const skip = (page - 1) * limit;
+  
+      const where: Prisma.RegionWhereInput = search ? {
+        name: {
+          contains: search,
+          mode: Prisma.QueryMode.insensitive,
+        }
+      } : {};
+  
+      const orderBy = {
+        [sortBy]: sortOrder
+      };
+  
+      const [regions, total] = await Promise.all([
+        this.prisma.region.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limit,
+        }),
+        this.prisma.region.count({ where }),
+      ]);
+  
+      return {
+        data: regions,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
       console.log(error.message);
       throw new InternalServerErrorException(error.message || 'Internal server error')
