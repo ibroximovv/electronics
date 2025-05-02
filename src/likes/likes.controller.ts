@@ -17,20 +17,10 @@ export class LikesController {
     return this.likesService.create(createLikeDto, req);
   }
 
-  @Get()
-  findAll(@Query() query: GetLikedPrdDto) {
-    return this.likesService.findAll(query);
-  }
-
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.likesService.findOne(id);
-  // }
-
   @UseGuards(AuthorizationGuard, SessionGuard)
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateLikeDto: UpdateLikeDto) {
-    return this.likesService.update(id, updateLikeDto);
+  @Get()
+  findAll(@Query() query: GetLikedPrdDto, @Req() req: Request) {
+    return this.likesService.findAll(query, req);
   }
 
   @UseGuards(AuthorizationGuard, SessionGuard)

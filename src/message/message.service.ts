@@ -26,7 +26,7 @@ export class MessageService {
     }
   }
 
-  async findAll(query: GetMessageDto) {
+  async findAll(query: GetMessageDto, id: string) {
     try {
       const { page = 1, limit = 10 } = query;
   
@@ -34,6 +34,7 @@ export class MessageService {
   
       const [messages, total] = await Promise.all([
         this.prisma.message.findMany({
+          where: { id },
           skip,
           take: limit,
           include: {

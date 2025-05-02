@@ -26,7 +26,7 @@ export class CategoryService {
       const { page = 1, limit = 10, search, sortBy = 'createdAt', sortOrder = 'asc' } = query;
       const skip = (page - 1) * limit;
   
-      const where: Prisma.RegionWhereInput = search ? {
+      const where: Prisma.CategoryWhereInput = search ? {
         name: {
           contains: search,
           mode: Prisma.QueryMode.insensitive,
@@ -38,13 +38,13 @@ export class CategoryService {
       };
   
       const [regions, total] = await Promise.all([
-        this.prisma.region.findMany({
+        this.prisma.category.findMany({
           where,
           orderBy,
           skip,
           take: limit,
         }),
-        this.prisma.region.count({ where }),
+        this.prisma.category.count({ where }),
       ]);
   
       return {

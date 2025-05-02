@@ -16,6 +16,10 @@ export class ProductService {
       if (findPrd) {
         return await this.prisma.product.update({ where: { id: findPrd.id }, data: { ...data, count: findPrd.count + data.count }})
       }
+      const findCategory = await this.prisma.category.findFirst({ where: { id: data.categoryId }})
+      if (!findCategory) {
+        throw new BadRequestException('Category not found')
+      }
       const created = await this.prisma.product.create({
         data: {
           ...data,

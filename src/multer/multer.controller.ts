@@ -3,25 +3,15 @@ import {
     Controller,
     Post,
     UploadedFile,
-    UseGuards,
     UseInterceptors,
   } from '@nestjs/common';
   import { FileInterceptor } from '@nestjs/platform-express';
   import { ApiBody, ApiConsumes } from '@nestjs/swagger';
-import { UserRole } from '@prisma/client';
   import { diskStorage } from 'multer';
   import { extname } from 'path';
-import { AuthorizationGuard } from 'src/authorization/authorization.guard';
-import { RolesDecorator } from 'src/common/role.decorator';
-import { RolesGuard } from 'src/roles/roles.guard';
-import { SessionGuard } from 'src/session/session.guard';
   
   @Controller('file')
   export class MulterController {
-
-    @RolesDecorator(UserRole.ADMIN)
-    @UseGuards(RolesGuard)
-    @UseGuards(AuthorizationGuard, SessionGuard)
     @Post('upload')
     @ApiConsumes('multipart/form-data')
     @ApiBody({

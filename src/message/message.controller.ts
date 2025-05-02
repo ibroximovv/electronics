@@ -18,8 +18,8 @@ export class MessageController {
   }
 
   @Get()
-  findAll(@Query() query: GetMessageDto) {
-    return this.messageService.findAll(query);
+  findAll(@Query() query: GetMessageDto, @Param('chatId') id: string) {
+    return this.messageService.findAll(query, id);
   }
 
   @Get(':id')
