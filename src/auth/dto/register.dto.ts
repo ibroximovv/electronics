@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { UserRole } from "@prisma/client";
 import { Type } from "class-transformer";
-import { IsEmail, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from "class-validator";
+import { IsEmail, IsEnum, IsNumber, IsOptional, IsPhoneNumber, IsString, IsUUID, Max, Min } from "class-validator";
 
 export class RegisterDto {
     @ApiProperty({ example: 'Ilyosbek' })
@@ -25,7 +25,7 @@ export class RegisterDto {
     email: string
 
     @ApiProperty({ example: '+998910128133' })
-    @IsString()
+    @IsPhoneNumber()
     phone: string
 
     @ApiProperty({ example: 'password' })
